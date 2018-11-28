@@ -1,0 +1,55 @@
+#define IN1 2  
+#define IN2 3 
+#define ENA  10 
+#define IN3 4  
+#define IN4 5  
+#define ENB  11 
+#define IN1b 6  
+#define IN2b 7 
+#define ENAb  12 
+#define IN3b 8  
+#define IN4b 9  
+#define ENBb  13 
+#define AD5 A5
+#define AD4 A4
+void setup()
+{
+	pinMode(IN1, OUTPUT);
+	pinMode(IN2, OUTPUT);
+	pinMode(IN3, OUTPUT);
+	pinMode(IN4, OUTPUT);
+	pinMode(ENA, OUTPUT);
+	pinMode(ENB, OUTPUT);
+	pinMode(IN1b, OUTPUT);
+	pinMode(IN2b, OUTPUT);
+	pinMode(IN3b, OUTPUT);
+	pinMode(IN4b, OUTPUT);
+	pinMode(ENAb, OUTPUT);
+	pinMode(ENBb, OUTPUT);
+	Serial.begin(9600);
+}
+int Go(int a, int b, int c, int d)
+{
+	int speed1 = a, speed2 = b, speed3 = c, speed4 = d;
+	if (speed1 > 0 && speed2 > 0 && speed3 > 0 && speed4 > 0)
+	{
+		digitalWrite(IN1, HIGH);
+		digitalWrite(IN2, LOW);
+		digitalWrite(IN3, HIGH);
+		digitalWrite(IN4, LOW);
+		digitalWrite(IN1b, HIGH);
+		digitalWrite(IN2b, LOW);
+		digitalWrite(IN3b, HIGH);
+		digitalWrite(IN4b, LOW);
+		analogWrite(ENA, speed1);
+		analogWrite(ENB, speed2);
+		analogWrite(ENAb, speed3);
+		analogWrite(ENBb, speed4);
+	}
+	delay(50);
+}
+void loop()
+{
+	Go(100, 200, 100, 200);
+	delay(50);
+}
