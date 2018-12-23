@@ -1,0 +1,226 @@
+# -*- coding:utf-8 -*-
+# File: cputemp.py
+import urllib2
+import json
+import time
+import datetime
+import RPi.GPIO as GPIO
+
+APIKEY = 'kilSsP6kMsArRKj1=sGIu=UZGF0='
+
+def checkdist2():
+    GPIO.output(3, True)
+ 
+    time.sleep(0.00001)
+    GPIO.output(3, False)
+ 
+    start_time = time.time()
+    stop_time = time.time()
+ 
+    while GPIO.input(5) == 0:
+        start_time = time.time()
+ 
+    while GPIO.input(5) == 1:
+        stop_time = time.time()
+ 
+    time_elapsed = stop_time - start_time
+    distance = (time_elapsed * 34300) / 2
+    print  "dist2值为: %.3f" %distance
+    if distance>220 or distance<140:
+            distance=1
+    else:
+            distance=0
+            
+ 
+    return distance
+
+def checkdist3():
+    GPIO.output(8, True)
+
+    time.sleep(0.00001)
+    GPIO.output(8, False)
+ 
+    start_time = time.time()
+    stop_time = time.time()
+ 
+    while GPIO.input(10) == 0:
+        start_time = time.time()
+ 
+    while GPIO.input(10) == 1:
+        stop_time = time.time()
+ 
+    time_elapsed = stop_time - start_time
+    distance = (time_elapsed * 34300) / 2
+    print  "dist3值为: %.3f" %distance
+    if distance>220 or distance<160:
+            distance=1
+    else:
+            distance=0
+ 
+    return distance
+
+
+def checkdist4():
+    GPIO.output(11, True)
+ 
+    time.sleep(0.00001)
+    GPIO.output(11, False)
+ 
+    start_time = time.time()
+    stop_time = time.time()
+ 
+    while GPIO.input(7) == 0:
+        start_time = time.time()
+ 
+    while GPIO.input(7) == 1:
+        stop_time = time.time()
+ 
+    time_elapsed = stop_time - start_time
+    distance = (time_elapsed * 34300) / 2
+    print  "dist4值为: %.3f" %distance
+ 
+    return distance
+
+        
+def checkdist5(): 
+    GPIO.output(16, True)
+ 
+    time.sleep(0.00001)
+    GPIO.output(16, False)
+ 
+    start_time = time.time()
+    stop_time = time.time()
+ 
+    while GPIO.input(12) == 0:
+        start_time = time.time()
+ 
+    while GPIO.input(12) == 1:
+        stop_time = time.time()
+ 
+    time_elapsed = stop_time - start_time
+    distance = (time_elapsed * 34300) / 2
+    print  "dist5值为: %.3f" %distance
+ 
+    return distance
+
+
+def checkdist6():
+    GPIO.output(13, True)
+ 
+    time.sleep(0.00001)
+    GPIO.output(13, False)
+ 
+    start_time = time.time()
+    stop_time = time.time()
+ 
+    while GPIO.input(15) == 0:
+        start_time = time.time()
+ 
+    while GPIO.input(15) == 1:
+        stop_time = time.time()
+ 
+    time_elapsed = stop_time - start_time
+    distance = (time_elapsed * 34300) / 2
+ 
+    print "dist6值为: %.3f" %distance
+    return distance
+
+def checkdist7():
+    GPIO.output(18, True)
+ 
+    time.sleep(0.00001)
+    GPIO.output(18, False)
+ 
+    start_time = time.time()
+    stop_time = time.time()
+ 
+    while GPIO.input(19) == 0:
+        start_time = time.time()
+ 
+    while GPIO.input(19) == 1:
+        stop_time = time.time()
+ 
+    time_elapsed = stop_time - start_time
+    distance = (time_elapsed * 34300) / 2
+
+    print "dist7值为: %.3f" %distance
+    return distance
+
+
+def http_put():
+    #a=checkdist2()
+    b=checkdist3()
+    #c=checkdist4()
+    #d=checkdist5()
+    #e=checkdist6()
+    #f=checkdist7()
+    crowd = ((b)*0.4+LEget())
+    CurTime = datetime.datetime.now()
+    url='http://api.heclouds.com/devices/505003820/datapoints'
+    values={'datastreams':[{"id":"crowd","datapoints":[{"at":CurTime.isoformat(),"value":crowd}]}]}
+
+    print "当前的ISO时间为： %s" %CurTime.isoformat()
+    print "上传的crowd值为: %.3f" %crowd
+
+    jdata = json.dumps(values)          
+    print jdata
+    request = urllib2.Request(url, jdata)
+    request.add_header('api-key', APIKEY)
+    request.get_method = lambda:'POST'      
+    request = urllib2.urlopen(request)
+    return request.read()
+    
+def LEget():
+            a=(1-GPIO.input(26))*0.8
+            b=(1-GPIO.input(22))*0.8
+            c=(1-GPIO.input(24))*0.8
+            d=(1-GPIO.input(29))*0.8
+            f=(1-GPIO.input(31))*0.8
+            g=(1-GPIO.input(32))*0.8
+            h=(1-GPIO.input(33))*0.2
+            i=(1-GPIO.input(35))*0.8
+            j=(1-GPIO.input(36))*0.8
+            k=(1-GPIO.input(37))*0.8
+            l=(1-GPIO.input(38))*0.8
+            e=(1-GPIO.input(40))*0.8
+            m=(1-GPIO.input(23))*0.8
+            ans=a+b+c+d+e+f+g+h+i+j+k+l+m
+            print "ans值为: %.3f" %ans
+            return ans
+
+
+GPIO.setmode(GPIO.BOARD)
+
+GPIO.setup(3,GPIO.OUT,initial=GPIO.LOW)
+GPIO.setup(5,GPIO.IN)
+GPIO.setup(8,GPIO.OUT,initial=GPIO.LOW)
+GPIO.setup(10,GPIO.IN)
+GPIO.setup(11,GPIO.OUT,initial=GPIO.LOW)
+GPIO.setup(7,GPIO.IN)
+GPIO.setup(16,GPIO.OUT,initial=GPIO.LOW)
+GPIO.setup(12,GPIO.IN)
+GPIO.setup(13,GPIO.OUT,initial=GPIO.LOW)
+GPIO.setup(15,GPIO.IN)
+GPIO.setup(18,GPIO.OUT,initial=GPIO.LOW)
+GPIO.setup(19,GPIO.IN)
+
+GPIO.setup(23, GPIO.IN)
+GPIO.setup(26, GPIO.IN)
+GPIO.setup(22, GPIO.IN)
+GPIO.setup(24, GPIO.IN)
+GPIO.setup(29, GPIO.IN)
+GPIO.setup(31, GPIO.IN)
+GPIO.setup(32, GPIO.IN)
+GPIO.setup(33, GPIO.IN)
+GPIO.setup(35, GPIO.IN)
+GPIO.setup(36, GPIO.IN)
+GPIO.setup(37, GPIO.IN)
+GPIO.setup(38, GPIO.IN)
+GPIO.setup(40, GPIO.IN)
+time.sleep(1)
+
+while True:
+        time.sleep(1)
+        resp = http_put()
+        print "OneNET请求结果:\n %s" %resp
+        time.sleep(1)
