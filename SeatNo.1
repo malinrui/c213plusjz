@@ -1,0 +1,233 @@
+#define SSID        "HJYMzYw" //改为你的Wi-Fi名称
+#define PASSWORD    "faqleatherman"//Wi-Fi密码
+#define HOST_NAME   "api.heclouds.com"
+#define DEVICEID    "505003820" //OneNet上的设备ID
+#define PROJECTID   "191084" //OneNet上的产品ID
+#define HOST_PORT   (80)
+String apiKey="kilSsP6kMsArRKj1=sGIu=UZGF0=";//与你的设备绑定的APIKey
+
+#define INTERVAL_SENSOR   1000             //定义传感器采样时间间隔  597000
+#define INTERVAL_NET      1000             //定义发送时间
+  
+#include <Wire.h>                                  //调用库  
+#include <ESP8266.h>
+
+#define Trig1 9
+#define Echo1 8
+#define Trig3 5
+#define Echo3 4
+#define Trig4 A2
+#define Echo4 A3
+#define Trig5 A0
+#define Echo5 A1
+
+#define IDLE_TIMEOUT_MS  3000 
+char buf[10];
+
+#define INTERVAL_sensor 2000
+unsigned long sensorlastTime = millis();
+
+float cm1,cm3,cm4,cm5,pix2,temp1,temp3,temp4,temp5;
+
+#define INTERVAL_OLED 1000
+
+String mCottenData;
+String jsonToSend;
+char  cm1_c[7], cm3_c[7], cm4_c[7],cm5_c[7],pix2_c[7];
+
+#include <SoftwareSerial.h>
+#define EspSerial mySerial
+#define UARTSPEED  9600
+SoftwareSerial mySerial(2, 3); /* RX:D3, TX:D2 */
+ESP8266 wifi(&EspSerial);
+//ESP8266 wifi(Serial1);                                      //定义一个ESP8266（wifi）的对象
+unsigned long net_time1 = millis();                          //数据上传服务器时间
+unsigned long sensor_time = millis();          
+
+String postString;   
+
+void setup(void)     //初始化函数  
+{       
+  //初始化串口波特率  
+    Wire.begin();
+    Serial.begin(115200);
+    while (!Serial); // wait for Leonardo enumeration, others continue immediately
+    Serial.print(F("setup begin\r\n"));
+    delay(100);
+    
+    pinMode(Echo1, INPUT);
+    pinMode(Trig1,OUTPUT);
+    pinMode(Echo3, INPUT);
+    pinMode(Trig3,OUTPUT);
+    pinMode(Echo4, INPUT);
+    pinMode(Trig4,OUTPUT);
+    pinMode(Echo5, INPUT);
+    pinMode(Trig5,OUTPUT);
+    pinMode(11,OUTPUT);
+
+     WifiInit(EspSerial, UARTSPEED);
+
+  Serial.print(F("FW Version:"));
+  Serial.println(wifi.getVersion().c_str());
+
+  if (wifi.setOprToStationSoftAP()) {
+    Serial.print(F("to station + softap ok\r\n"));
+  } else {
+    Serial.print(F("to station + softap err\r\n"));
+  }
+
+  if (wifi.joinAP(SSID, PASSWORD)) {
+    Serial.print(F("Join AP success\r\n"));
+
+    Serial.print(F("IP:"));
+    Serial.println( wifi.getLocalIP().c_str());
+  } else {
+    Serial.print(F("Join AP failure\r\n"));
+  }
+
+  if (wifi.disableMUX()) {
+    Serial.print(F("single ok\r\n"));
+  } else {
+    Serial.print(F("single err\r\n"));
+  }
+
+  Serial.print(F("setup end\r\n"));
+    
+  
+}
+
+void loop(void)     //循环函数  
+{   
+  if (sensor_time > millis())  sensor_time = millis();  
+    
+  if(millis() - sensor_time > INTERVAL_SENSOR)              //传感器采样时间间隔  
+  {  
+    getSensorData();                                        //读串口中的传感器数据
+    sensor_time = millis();
+  }  
+
+    
+  if (net_time1 > millis())  net_time1 = millis();
+  
+  if (millis() - net_time1 > INTERVAL_NET)                  //发送数据时间间隔
+  {                
+    updateSensorData();                                     //将数据上传到服务器的函数
+    net_time1 = millis();
+  }
+  
+}
+
+void getSensorData(){  
+    
+    digitalWrite(Trig1,LOW);
+    delayMicroseconds(2);
+    digitalWrite(Trig1,HIGH);
+    delayMicroseconds(10);
+    digitalWrite(Trig1,LOW);
+
+    temp1=float(pulseIn(Echo1,HIGH));
+    cm1=(temp1*17)/1000;
+
+    digitalWrite(Trig3,LOW);
+    delayMicroseconds(2);
+    digitalWrite(Trig3,HIGH);
+    delayMicroseconds(10);
+    digitalWrite(Trig3,LOW);
+
+    temp3=float(pulseIn(Echo3,HIGH));
+    cm3=(temp3*17)/1000;
+
+    digitalWrite(Trig4,LOW);
+    delayMicroseconds(2);
+    digitalWrite(Trig4,HIGH);
+    delayMicroseconds(10);
+    digitalWrite(Trig4,LOW);
+
+    temp4=float(pulseIn(Echo4,HIGH));
+    cm4=(temp4*17)/1000;
+
+    digitalWrite(Trig5,LOW);
+    delayMicroseconds(2);
+    digitalWrite(Trig5,HIGH);
+    delayMicroseconds(10);
+    digitalWrite(Trig5,LOW);
+
+    temp5=float(pulseIn(Echo5,HIGH));
+    cm5=(temp5*17)/1000;
+    
+    if(cm1>40&&cm1<210)
+    {
+      if((cm3>6&&cm3<40)||(cm4>6&&cm4<40)||(cm5>6&&cm5<40))
+     { pix2=2;
+      digitalWrite(11,HIGH);}
+      else
+     { pix2=0;
+      digitalWrite(11,LOW);}
+    }
+    else
+    {pix2=1;
+    digitalWrite(11,LOW);}
+    
+    delay(300);
+    dtostrf(cm1, 2, 1, cm1_c);
+    dtostrf(cm3, 2, 1, cm3_c);
+    dtostrf(cm4, 2, 1, cm4_c);
+    dtostrf(cm5, 2, 1, cm5_c);
+    dtostrf(pix2, 2, 1, pix2_c);
+}
+
+void updateSensorData() {
+  if (wifi.createTCP(HOST_NAME, HOST_PORT)) { //建立TCP连接，如果失败，不能发送该数据
+    Serial.print("create tcp ok\r\n");
+
+    jsonToSend="{\"cm1\":";
+    dtostrf(cm1, 1, 2, buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+=",\"cm3\":";
+    dtostrf(cm3, 1, 2, buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+=",\"cm4\":";
+    dtostrf(cm4, 1, 2, buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+=",\"cm5\":";
+    dtostrf(cm5, 1, 2, buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+=",\"pix2\":";
+    dtostrf(pix2, 1, 2, buf);
+    jsonToSend+="\""+String(buf)+"\"";
+    jsonToSend+="}";
+
+    postString="POST /devices/";
+    postString+=DEVICEID;
+    postString+="/datapoints?type=3 HTTP/1.1";
+    postString+="\r\n";
+    postString+="api-key:";
+    postString+=apiKey;
+    postString+="\r\n";
+    postString+="Host:api.heclouds.com\r\n";
+    postString+="Connection:close\r\n";
+    postString+="Content-Length:";
+    postString+=jsonToSend.length();
+    postString+="\r\n";
+    postString+="\r\n";
+    postString+=jsonToSend;
+    postString+="\r\n";
+    postString+="\r\n";
+    postString+="\r\n";
+
+    const char *postArray = postString.c_str();                 //将str转化为char数组
+  Serial.println(postArray);
+  wifi.send((const uint8_t*)postArray, strlen(postArray));    //send发送命令，参数必须是这两种格式，尤其是(const uint8_t*)
+  Serial.println("send success");   
+     if (wifi.releaseTCP()) {                                 //释放TCP连接
+        Serial.print("release tcp ok\r\n");
+        } 
+     else {
+        Serial.print("release tcp err\r\n");
+        }
+      postArray = NULL;                                       //清空数组，等待下次传输数据
+  
+  } else {
+    Serial.print("create tcp err\r\n");
+  }
+}
