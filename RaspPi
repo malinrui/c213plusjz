@@ -176,14 +176,14 @@ def LEget():
             c=(1-GPIO.input(24))*0.8
             d=(1-GPIO.input(29))*0.8
             f=(1-GPIO.input(31))*0.8
-            g=(1-GPIO.input(32))*0.8
+            g=(1-GPIO.input(32))*0.2
             h=(1-GPIO.input(33))*0.2
-            i=(1-GPIO.input(35))*0.8
-            j=(1-GPIO.input(36))*0.8
-            k=(1-GPIO.input(37))*0.8
-            l=(1-GPIO.input(38))*0.8
-            e=(1-GPIO.input(40))*0.8
-            m=(1-GPIO.input(23))*0.8
+            i=(1-GPIO.input(35))*0.2
+            j=(1-GPIO.input(36))*0.2
+            k=(1-GPIO.input(37))*0.4
+            l=(1-GPIO.input(38))*0.4
+            e=(1-GPIO.input(40))*0.4
+            m=(1-GPIO.input(23))*0.4
             ans=a+b+c+d+e+f+g+h+i+j+k+l+m
             print "ans值为: %.3f" %ans
             return ans
